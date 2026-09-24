@@ -22,19 +22,6 @@ public class CoordTransformViewer extends JFrame {
     // ---- Resolucao do dispositivo (viewport / display) ----
     private int ndh, ndv;
 
-    // ---- Cenario do NDC (item 2 do enunciado) ----
-    private enum NdcRange {
-        ZERO_UM("[0,1] x [0,1]"),
-        MENOS_UM_UM("[-1,1] x [-1,1]");
-
-        private final String label;
-        NdcRange(String label) {
-            this.label = label;
-        }
-        @Override public String toString() {
-            return label;
-        }
-    }
     private NdcRange ndcRange = NdcRange.ZERO_UM;
 
     private DisplayPanel display;
@@ -59,9 +46,7 @@ public class CoordTransformViewer extends JFrame {
         setLocationRelativeTo(null);
     }
 
-    // =========================================================
-    //  PROCEDIMENTOS DE TRANSFORMACAO
-    // =========================================================
+  // Transformações
 
     /** user_to_ndc: mundo -> NDC, de acordo com o cenario escolhido. */
     private double[] userToNdc(double x, double y) {
@@ -190,54 +175,4 @@ public class CoordTransformViewer extends JFrame {
                     "Entrada invalida", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    // =========================================================
-    //  PAINEL DO DISPOSITIVO GRAFICO (tela limpa, sem reticulados)
-    // =========================================================
-
-    /** Simula o display: um buffer de pixels reais, sem grid, fundo solido. */
-    private static class DisplayPanel extends JPanel {
-        private BufferedImage buffer;
-        private int width, height;
-
-        DisplayPanel(int width, int height) {
-            this.width = width;
-            this.height = height;
-            setPreferredSize(new Dimension(width, height));
-            buffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-            clear();
-        }
-
-        void resizeCanvas(int w, int h) {
-            if (w != this.width || h != this.height) {
-                this.width = w;
-                this.height = h;
-                buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-                setPreferredSize(new Dimension(w, h));
-                clear();
-            }
-        }
-
-        /** Limpa o display (background totalmente limpo, sem reticulados). */
-        void clear() {
-            Graphics2D g = buffer.createGraphics();
-            g.setColor(Color.GREEN);
-            g.fillRect(0, 0, width, height);
-            g.dispose();
-        }
-
-        /** drawPixel: acende UM unico pixel na posicao (x,y) com a cor dada. */
-        void drawPixel(int x, int y, Color color) {
-            if (x >= 0 && x < width && y >= 0 && y < height) {
-                buffer.setRGB(x, y, color.getRGB());
-            }
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            g.drawImage(buffer, 0, 0, null);
-        }
-    }
-
 }
