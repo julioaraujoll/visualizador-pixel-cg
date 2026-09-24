@@ -1,59 +1,70 @@
 # visualizador-pixel-cg
-O presente projeto, desenvolvido em Java(Swing/AWT) tem como objetivo de demonstrar graficamente a ativação de um pixel na tela,
-de forma iterativa, a partir da transformação das coordenadas x,y do usuário para NDCs e
-de NDCs para coordenadas de dispositivos.Da mesma forma, dados de entrada gráficos são transformados de
-coordenadas do dispositivo para NDCs, e depois para coordenadas do usuário.
 
-O usuário pode definir a janela e a resolução do dispositivo. O programa calcula a posição do pixel e o acende em verde, a fim de destaque, na tela limpa em preto, usando o drawPixel()
+Projeto em Java (Swing/AWT) que mostra na prática a transformação de
+coordenadas do mundo para NDC e de NDC para dispositivo:
 
+```
+Mundo  --user_to_ndc-->  NDC  --ndc_to_dc-->  Dispositivo (pixel)
+```
 
+Você define a janela do mundo e a resolução do dispositivo, o programa
+calcula o pixel correspondente e acende ele em verde numa tela preta
+limpa (sem grade), usando `drawPixel()`.
 
+Suporta dois cenários de NDC: `[0,1]x[0,1]` e `[-1,1]x[-1,1]`.
 
-| Procedimento   | Direção            | Onde está implementado |
-|----------------|---------------------|-------------------------|
-| `user_to_ndc`  | Mundo → NDC          | `CoordTransformViewer.userToNdc` |
-| `inp_to_ndc`   | Mundo → NDC (alias)  | `CoordTransformViewer.inpToNdc`  |
-| `ndc_to_user`  | NDC → Mundo (inversa)| `CoordTransformViewer.ndcToUser` |
-| `ndc_to_dc`    | NDC → Dispositivo    | `CoordTransformViewer.ndcToDc`   |
+> Obs: a transformação inversa completa (dispositivo → NDC → mundo, tipo
+> picking com clique do mouse) ainda não existe. O `ndc_to_user` que tem
+> aqui é só pra conferir se a ida e volta bate.
 
-Dois cenários de NDC são suportados: `[0,1] × [0,1]` e `[-1,1] × [-1,1]`
-(coordenadas normalizadas centradas na origem).
+## Arquivos
 
-### Fundamentação matemática
+- `Main.java` — só dá o `setVisible` na janela
+- `NdcRange.java` — enum com os dois cenários de NDC
+- `DisplayPanel.java` — o "display": framebuffer + `drawPixel`
+- `CoordTransformViewer.java` — as transformações (`userToNdc`,
+  `inpToNdc`, `ndcToUser`, `ndcToDc`) e a interface
 
-**Mundo → NDC**, com janela `[xmin,xmax] × [ymin,ymax]`:
+Javadoc completo em cada classe/método no próprio código.
 
-- Cenário `[0,1]×[0,1]`:
-  ```
-  ndcx = (x - xmin) / (xmax - xmin)
-  ndcy = (y - ymin) / (ymax - ymin)
-  ```
-- Cenário `[-1,1]×[-1,1]` (reescala o resultado acima com `2t - 1`):
-  ```
-  ndcx = 2·(x - xmin)/(xmax - xmin) - 1
-  ndcy = 2·(y - ymin)/(ymax - ymin) - 1
-  ```
+## Fórmulas
 
-**NDC → Mundo** (inversa da anterior):
+Mundo → NDC, janela `[xmin,xmax] x [ymin,ymax]`:
 
-- `[0,1]`: `x = xmin + ndcx·(xmax-xmin)`, `y = ymin + ndcy·(ymax-ymin)`
-- `[-1,1]`: `x = xmin + (ndcx+1)/2·(xmax-xmin)`, análogo para `y`
+```
+# cenário [0,1]
+ndcx = (x - xmin) / (xmax - xmin)
+ndcy = (y - ymin) / (ymax - ymin)
 
-**NDC → Dispositivo**, com resolução `ndh × ndv`:
+# cenário [-1,1] -> mesma coisa, so reescala com 2t-1
+ndcx = 2*(x - xmin)/(xmax - xmin) - 1
+ndcy = 2*(y - ymin)/(ymax - ymin) - 1
+```
 
-1. Normaliza o NDC para `[0,1]`: `u = ndcx` (ou `(ndcx+1)/2` no cenário `[-1,1]`), idem para `v`.
-2. Aplica:
-   ```
-   dcx = round(u · (ndh-1))
-   dcy = round((1-v) · (ndv-1))   // eixo Y invertido: dispositivo cresce para baixo
-   ```
+NDC → Dispositivo, resolução `ndh x ndv`:
 
-A expressão final de `ndc_to_dc` é sempre `round(u·(n-1))`; o que muda entre
-os dois cenários é apenas como `u`/`v` são obtidos a partir do NDC.
+```
+u = ndcx                (cenário [0,1])
+u = (ndcx + 1) / 2       (cenário [-1,1])
 
+dcx = round(u * (ndh - 1))
+dcy = round((1 - u_y) * (ndv - 1))   # inverte Y, tela cresce pra baixo
+```
+
+## Rodar
+
+```bash
+cd src
+javac *.java
+java Main
+```
+
+Precisa de ambiente gráfico (não roda headless).
 
 ## Requisitos
 
-- Java SE 8 ou superior (usa apenas `javax.swing` e `java.awt`, sem
-  dependências externas).
-- Ambiente com suporte a interface gráfica para exibir a janela.
+Java 8+. Só `javax.swing`/`java.awt`, sem dependência externa.
+
+## Licença
+
+MIT — ver [LICENSE](LICENSE).
